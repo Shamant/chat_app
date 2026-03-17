@@ -1,0 +1,142 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1400" height="1900" viewBox="0 0 1400 1900">
+  <defs>
+    <marker id="arrow" markerWidth="10" markerHeight="8" refX="9" refY="4" orient="auto" markerUnits="strokeWidth">
+      <path d="M0,0 L10,4 L0,8 z" fill="#1f2937"/>
+    </marker>
+    <style>
+      .title { font: 700 38px Arial, sans-serif; fill: #111827; }
+      .label { font: 500 20px Arial, sans-serif; fill: #111827; }
+      .small { font: 500 17px Arial, sans-serif; fill: #111827; }
+      .box { fill: #ffffff; stroke: #111827; stroke-width: 2.4; rx: 12; ry: 12; }
+      .decision { fill: #ffffff; stroke: #111827; stroke-width: 2.4; }
+      .line { stroke: #1f2937; stroke-width: 2.4; fill: none; marker-end: url(#arrow); }
+      .note { font: 600 16px Arial, sans-serif; fill: #374151; }
+    </style>
+  </defs>
+
+  <rect x="0" y="0" width="1400" height="1900" fill="#f9fafb"/>
+  <text x="700" y="70" text-anchor="middle" class="title">Classroom Connect - System Flowchart</text>
+
+  <!-- Start -->
+  <rect class="box" x="560" y="110" width="280" height="70"/>
+  <text x="700" y="154" text-anchor="middle" class="label">Start App</text>
+
+  <rect class="box" x="520" y="230" width="360" height="80"/>
+  <text x="700" y="278" text-anchor="middle" class="label">Google Sign In</text>
+
+  <!-- Allowlist decision -->
+  <polygon class="decision" points="700,360 890,450 700,540 510,450"/>
+  <text x="700" y="445" text-anchor="middle" class="label">Email in approved</text>
+  <text x="700" y="472" text-anchor="middle" class="label">allowlist?</text>
+
+  <rect class="box" x="980" y="400" width="330" height="90"/>
+  <text x="1145" y="452" text-anchor="middle" class="label">Show "Email not approved"</text>
+
+  <rect class="box" x="980" y="530" width="330" height="70"/>
+  <text x="1145" y="574" text-anchor="middle" class="label">End</text>
+
+  <rect class="box" x="510" y="600" width="380" height="90"/>
+  <text x="700" y="654" text-anchor="middle" class="label">Enter Classroom</text>
+
+  <rect class="box" x="470" y="740" width="460" height="90"/>
+  <text x="700" y="795" text-anchor="middle" class="label">Load chat messages + whiteboard state</text>
+
+  <!-- Action decision -->
+  <polygon class="decision" points="700,890 950,1000 700,1110 450,1000"/>
+  <text x="700" y="1006" text-anchor="middle" class="label">User action?</text>
+
+  <!-- Text message branch -->
+  <rect class="box" x="70" y="940" width="280" height="80"/>
+  <text x="210" y="988" text-anchor="middle" class="small">Send text message</text>
+
+  <rect class="box" x="50" y="1070" width="320" height="80"/>
+  <text x="210" y="1118" text-anchor="middle" class="small">Save message to Firestore</text>
+
+  <rect class="box" x="30" y="1195" width="360" height="88"/>
+  <text x="210" y="1243" text-anchor="middle" class="small">Realtime update to all users</text>
+
+  <rect class="box" x="50" y="1328" width="320" height="88"/>
+  <text x="210" y="1378" text-anchor="middle" class="small">Queue 5-min email digest</text>
+
+  <!-- Attachment branch -->
+  <rect class="box" x="510" y="1180" width="380" height="86"/>
+  <text x="700" y="1232" text-anchor="middle" class="small">Send attachment</text>
+
+  <rect class="box" x="510" y="1310" width="380" height="86"/>
+  <text x="700" y="1360" text-anchor="middle" class="small">If image: compress</text>
+
+  <rect class="box" x="510" y="1440" width="380" height="86"/>
+  <text x="700" y="1490" text-anchor="middle" class="small">Upload to Supabase</text>
+
+  <rect class="box" x="510" y="1570" width="380" height="86"/>
+  <text x="700" y="1620" text-anchor="middle" class="small">Save message to Firestore</text>
+
+  <!-- Whiteboard branch -->
+  <rect class="box" x="1030" y="900" width="300" height="80"/>
+  <text x="1180" y="948" text-anchor="middle" class="small">Open whiteboard</text>
+
+  <polygon class="decision" points="1180,1020 1320,1090 1180,1160 1040,1090"/>
+  <text x="1180" y="1095" text-anchor="middle" class="small">Moderator?</text>
+
+  <rect class="box" x="1030" y="1200" width="300" height="80"/>
+  <text x="1180" y="1248" text-anchor="middle" class="small">View only</text>
+
+  <rect class="box" x="1030" y="1320" width="300" height="80"/>
+  <text x="1180" y="1368" text-anchor="middle" class="small">Draw / Clear board</text>
+
+  <rect class="box" x="1030" y="1440" width="300" height="80"/>
+  <text x="1180" y="1490" text-anchor="middle" class="small">Sync board to all users</text>
+
+  <rect class="box" x="1030" y="1560" width="300" height="86"/>
+  <text x="1180" y="1612" text-anchor="middle" class="small">Export snapshot to chat</text>
+
+  <!-- Logout -->
+  <rect class="box" x="560" y="1720" width="280" height="72"/>
+  <text x="700" y="1766" text-anchor="middle" class="label">Logout / End</text>
+
+  <!-- Lines main -->
+  <path class="line" d="M700,180 L700,230"/>
+  <path class="line" d="M700,310 L700,360"/>
+  <path class="line" d="M700,540 L700,600"/>
+  <path class="line" d="M700,690 L700,740"/>
+  <path class="line" d="M700,830 L700,890"/>
+
+  <!-- decision yes/no -->
+  <path class="line" d="M890,450 L980,450"/>
+  <text x="930" y="438" class="note">No</text>
+  <path class="line" d="M1145,490 L1145,530"/>
+  <path class="line" d="M700,540 L700,600"/>
+  <text x="718" y="575" class="note">Yes</text>
+
+  <!-- text branch -->
+  <path class="line" d="M450,1000 L350,1000"/>
+  <path class="line" d="M210,1020 L210,1070"/>
+  <path class="line" d="M210,1150 L210,1195"/>
+  <path class="line" d="M210,1283 L210,1328"/>
+
+  <!-- attachment branch -->
+  <path class="line" d="M700,1110 L700,1180"/>
+  <path class="line" d="M700,1266 L700,1310"/>
+  <path class="line" d="M700,1396 L700,1440"/>
+  <path class="line" d="M700,1526 L700,1570"/>
+
+  <!-- whiteboard branch -->
+  <path class="line" d="M950,1000 L1030,940"/>
+  <path class="line" d="M1180,980 L1180,1020"/>
+  <path class="line" d="M1180,1160 L1180,1200"/>
+  <path class="line" d="M1180,1160 L1180,1320"/>
+  <text x="1202" y="1184" class="note">No</text>
+  <text x="1202" y="1298" class="note">Yes</text>
+  <path class="line" d="M1180,1400 L1180,1440"/>
+  <path class="line" d="M1180,1520 L1180,1560"/>
+
+  <!-- loop back -->
+  <path class="line" d="M210,1416 L210,1660 L700,1660 L700,1110"/>
+  <path class="line" d="M700,1656 L700,1660"/>
+  <path class="line" d="M890,1613 L980,1613 L980,1000 L950,1000"/>
+  <path class="line" d="M1330,1610 L1360,1610 L1360,1000 L950,1000"/>
+
+  <!-- logout from action -->
+  <path class="line" d="M700,1110 L700,1720"/>
+  <text x="718" y="1698" class="note">Logout selected</text>
+</svg>
