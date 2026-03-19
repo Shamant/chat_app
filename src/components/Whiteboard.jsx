@@ -2,6 +2,7 @@ import { useEffect, useMemo, useRef, useState } from "react";
 import {
   arrayUnion,
   doc,
+  getDoc,
   onSnapshot,
   serverTimestamp,
   setDoc,
@@ -40,10 +41,8 @@ function getCanvasPoint(event, canvas) {
 }
 
 export default function Whiteboard({
-  socket,
   username,
   canDraw,
-  initialPaths,
   onExportSnapshot,
 }) {
   const canvasRef = useRef(null);
@@ -53,10 +52,7 @@ export default function Whiteboard({
   const [boardError, setBoardError] = useState("");
   const [canvasWidth, setCanvasWidth] = useState(800);
   const useFirebaseSync = configReady && Boolean(db);
-  const visiblePaths = useMemo(
-    () => (useFirebaseSync ? firebasePaths : initialPaths ?? []),
-    [useFirebaseSync, firebasePaths, initialPaths],
-  );
+  const visiblePaths = useMemo(() => firebasePaths, [firebasePaths]);
 
   const boardDoc = useMemo(() => {
     if (!useFirebaseSync) return null;
@@ -77,13 +73,18 @@ export default function Whiteboard({
   useEffect(() => {
     if (!useFirebaseSync || !boardDoc) return;
 
-    setDoc(
-      boardDoc,
-      { paths: [], updatedAt: serverTimestamp(), updatedBy: "system" },
-      { merge: true },
-    ).catch(() => {
-      setBoardError("Could not initialize whiteboard.");
-    });
+    getDoc(boardDoc)
+      .then((snapshot) => {
+        if (snapshot.exists()) return;
+        return setDoc(
+          boardDoc,
+          { paths: [], updatedAt: serverTimestamp(), updatedBy: "system" },
+          { merge: true },
+        );
+      })
+      .catch(() => {
+        setBoardError("Could not initialize whiteboard.");
+      });
 
     const unsub = onSnapshot(
       boardDoc,
@@ -141,51 +142,40 @@ export default function Whiteboard({
     const finishedPath = { ...activePath, id: `${Date.now()}-${Math.random()}` };
     setActivePath(null);
 
-    if (useFirebaseSync && boardDoc) {
-      try {
-        await updateDoc(boardDoc, {
-          paths: arrayUnion(finishedPath),
-          updatedAt: serverTimestamp(),
-          updatedBy: username,
-        });
-      } catch {
-        setBoardError("Could not save whiteboard stroke.");
-      }
+    if (!useFirebaseSync || !boardDoc) {
+      setBoardError("Whiteboard sync is unavailable. Check Firebase configuration.");
       return;
     }
 
-    socket.emit("whiteboard_add_path", { path: finishedPath }, (response) => {
-      if (!response?.ok) {
-        setBoardError(response?.error ?? "Could not save whiteboard stroke.");
-      } else {
-        setBoardError("");
-      }
-    });
+    try {
+      await updateDoc(boardDoc, {
+        paths: arrayUnion(finishedPath),
+        updatedAt: serverTimestamp(),
+        updatedBy: username,
+      });
+      setBoardError("");
+    } catch {
+      setBoardError("Could not save whiteboard stroke.");
+    }
   };
 
   const clearWhiteboard = async () => {
     if (!canDraw) return;
-    if (useFirebaseSync && boardDoc) {
-      try {
-        await setDoc(
-          boardDoc,
-          { paths: [], updatedAt: serverTimestamp(), updatedBy: username },
-          { merge: true },
-        );
-        setBoardError("");
-      } catch {
-        setBoardError("Could not clear whiteboard.");
-      }
+    if (!useFirebaseSync || !boardDoc) {
+      setBoardError("Whiteboard sync is unavailable. Check Firebase configuration.");
       return;
     }
 
-    socket.emit("whiteboard_clear", {}, (response) => {
-      if (!response?.ok) {
-        setBoardError(response?.error ?? "Could not clear whiteboard.");
-      } else {
-        setBoardError("");
-      }
-    });
+    try {
+      await setDoc(
+        boardDoc,
+        { paths: [], updatedAt: serverTimestamp(), updatedBy: username },
+        { merge: true },
+      );
+      setBoardError("");
+    } catch {
+      setBoardError("Could not clear whiteboard.");
+    }
   };
 
   const exportSnapshot = () => {
@@ -232,8 +222,7 @@ export default function Whiteboard({
 
       {!useFirebaseSync ? (
         <p className="roomHint fallbackHint">
-          Running in socket mode (works now). Add Firebase keys later for
-          cloud-synced whiteboard.
+          Whiteboard requires Firebase configuration to sync updates.
         </p>
       ) : null}
 

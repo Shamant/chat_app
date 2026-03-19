@@ -1,6 +1,5 @@
 import { useEffect, useMemo, useRef, useState } from "react";
 import { onAuthStateChanged } from "firebase/auth";
-import { io } from "socket.io-client";
 import {
   addDoc,
   collection,
@@ -19,10 +18,6 @@ import { hasAccess, isModeratorEmail } from "./accessControl";
 import { auth, configReady, db, signInWithGoogle, signOutUser } from "./firebase";
 import { supabase, supabaseReady } from "./supabase";
 
-const socket = io(import.meta.env.VITE_SERVER_URL ?? "http://localhost:3001", {
-  autoConnect: false,
-});
-
 function App() {
   const [user, setUser] = useState(null);
   const [authLoading, setAuthLoading] = useState(true);
@@ -31,7 +26,6 @@ function App() {
   const [error, setError] = useState("");
   const [text, setText] = useState("");
   const [messages, setMessages] = useState([]);
-  const [whiteboardPaths, setWhiteboardPaths] = useState([]);
   const [attachmentFile, setAttachmentFile] = useState(null);
   const [isSending, setIsSending] = useState(false);
   const [activeTab, setActiveTab] = useState("chat");
@@ -49,16 +43,6 @@ function App() {
   }, [user, normalizedEmail]);
 
   useEffect(() => {
-    socket.on("whiteboard_synced", ({ paths }) => {
-      setWhiteboardPaths(Array.isArray(paths) ? paths : []);
-    });
-
-    return () => {
-      socket.off("whiteboard_synced");
-    };
-  }, []);
-
-  useEffect(() => {
     if (!configReady || !auth) {
       setAuthLoading(false);
       return undefined;
@@ -71,7 +55,6 @@ function App() {
         setJoined(false);
         setIsModerator(false);
         setMessages([]);
-        setWhiteboardPaths([]);
         return;
       }
 
@@ -118,28 +101,9 @@ function App() {
       setError("Firebase is not configured. Add keys in .env first.");
       return;
     }
-
-    if (!socket.connected) {
-      socket.connect();
-    }
-
-    socket.emit(
-      "join_room",
-      {
-        username: displayName,
-        email: normalizedEmail,
-      },
-      (response) => {
-        if (!response?.ok) {
-          setError(response?.error ?? "Could not join the chat.");
-          return;
-        }
-        setError("");
-        setJoined(true);
-        setIsModerator(Boolean(response.isModerator));
-        setWhiteboardPaths(response.whiteboardPaths ?? []);
-      },
-    );
+    setError("");
+    setJoined(true);
+    setIsModerator(Boolean(isModeratorEmail(normalizedEmail)));
   };
 
   const compressImage = async (file) =>
@@ -256,10 +220,17 @@ function App() {
         createdAt: serverTimestamp(),
       });
 
-      socket.emit("message_created_for_notifications", {
-        senderEmail: normalizedEmail,
-        senderName: displayName,
-        text: outgoingText.trim() || "(attachment)",
+      // Notification queue is handled by a Vercel serverless endpoint.
+      void fetch("/api/queue-notification", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          senderEmail: normalizedEmail,
+          senderName: displayName,
+          text: outgoingText.trim() || "(attachment)",
+        }),
+      }).catch(() => {
+        // Keep chat flow non-blocking even if notification endpoint is unavailable.
       });
 
       setText("");
@@ -316,11 +287,9 @@ function App() {
   };
 
   const leaveRoom = () => {
-    socket.disconnect();
     setJoined(false);
     setIsModerator(false);
     setMessages([]);
-    setWhiteboardPaths([]);
     setText("");
     setAttachmentFile(null);
     setActiveTab("chat");
@@ -541,10 +510,8 @@ function App() {
             </div>
           ) : (
             <Whiteboard
-              socket={socket}
               username={displayName}
               canDraw={isModerator}
-              initialPaths={whiteboardPaths}
               onExportSnapshot={handleAttachFromWhiteboard}
             />
           )}
